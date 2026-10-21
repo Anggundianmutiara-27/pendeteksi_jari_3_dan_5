@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Recognition | Teachable Machine</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(135deg, #eef2ff, #f8fafc 55%, #ecfeff);
+      color: #172033;
+      min-height: 100vh;
+    }
+    header {
+      padding: 24px 7%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+    .brand { font-weight: 800; font-size: 1.1rem; letter-spacing: .2px; }
+    .brand span { color: #4f46e5; }
+    .status {
+      font-size: .85rem;
+      color: #475569;
+      background: #ffffffcc;
+      border: 1px solid #e2e8f0;
+      padding: 8px 12px;
+      border-radius: 999px;
+    }
+    main { width: min(1080px, 90%); margin: 38px auto 60px; }
+    .hero { text-align: center; margin-bottom: 30px; }
+    .eyebrow {
+      display: inline-block;
+      color: #4338ca;
+      background: #e0e7ff;
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: .8rem;
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+    h1 { font-size: clamp(2rem, 5vw, 3.2rem); margin: 0 0 14px; line-height: 1.1; }
+    .hero p { color: #64748b; max-width: 620px; margin: 0 auto; line-height: 1.7; }
+    .workspace {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+      align-items: stretch;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 22px;
+      padding: 25px;
+      box-shadow: 0 18px 45px #33415512;
+    }
+    .card h2 { margin: 0 0 8px; font-size: 1.15rem; }
+    .subtext { margin: 0 0 20px; color: #64748b; font-size: .92rem; line-height: 1.5; }
+    #webcam-container {
+      min-height: 250px;
+      background: #f1f5f9;
+      border: 1px dashed #cbd5e1;
+      border-radius: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      padding: 12px;
+    }
+    #webcam-container canvas {
+      max-width: 100%;
+      height: auto;
+      border-radius: 12px;
+    }
+    .camera-placeholder { text-align: center; color: #64748b; line-height: 1.6; padding: 25px; }
+    .camera-icon { font-size: 2.4rem; display: block; margin-bottom: 10px; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-weight: 700;
+      font-size: .95rem;
+      cursor: pointer;
+      transition: transform .15s, opacity .15s;
+    }
+    button:hover { transform: translateY(-1px); }
+    button:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+    .primary { color: white; background: #4f46e5; flex: 1; }
+    .secondary { color: #334155; background: #e2e8f0; }
+    #message { margin: 14px 0 0; font-size: .88rem; color: #64748b; line-height: 1.5; }
+    #label-container { display: grid; gap: 14px; }
+    .prediction-row { margin-bottom: 2px; }
+    .prediction-heading {
+      display: flex; justify-content: space-between; gap: 12px;
+      font-size: .9rem; margin-bottom: 7px; font-weight: 700;
+    }
+    .prediction-heading span:first-child { overflow-wrap: anywhere; }
+    .track { width: 100%; height: 10px; background: #e2e8f0; border-radius: 99px; overflow: hidden; }
+    .bar { height: 100%; width: 0%; background: linear-gradient(90deg, #6366f1, #06b6d4); border-radius: 99px; transition: width .2s ease; }
+    .empty-results {
+      padding: 28px 16px; border-radius: 15px; background: #f8fafc;
+      color: #94a3b8; text-align: center; line-height: 1.6;
+    }
+    .tip {
+      margin-top: 22px; background: #eef2ff; color: #3730a3;
+      padding: 14px 16px; border-radius: 14px; font-size: .88rem; line-height: 1.6;
+    }
+    footer { text-align: center; padding: 0 20px 28px; color: #94a3b8; font-size: .85rem; }
+    @media (max-width: 760px) {
+      header { padding: 20px 5%; }
+      main { width: 92%; margin-top: 22px; }
+      .workspace { grid-template-columns: 1fr; }
+      .card { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Vision<span>AI</span></div>
+    <div class="status">● Image Recognition</div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="eyebrow">TEACHABLE MACHINE MODEL</div>
+      <h1>Kenali Gambar<br>Secara Langsung</h1>
+      <p>Aktifkan kamera dan biarkan model AI menganalisis gambar, lalu lihat hasil prediksi beserta tingkat keyakinannya.</p>
+    </section>
+
+    <section class="workspace">
+      <div class="card">
+        <h2>📷 Kamera</h2>
+        <p class="subtext">Pastikan kamera perangkat tersedia dan izinkan akses kamera saat diminta.</p>
+        <div id="webcam-container">
+          <div class="camera-placeholder" id="camera-placeholder">
+            <span class="camera-icon">📸</span>
+            Kamera belum diaktifkan.<br>Tekan tombol Mulai Kamera.
+          </div>
+        </div>
+        <div class="actions">
+          <button type="button" class="primary" id="start-button" onclick="init()">Mulai Kamera</button>
+          <button type="button" class="secondary" id="stop-button" onclick="stopCamera()" disabled>Matikan</button>
+        </div>
+        <p id="message" role="status">Model siap dijalankan setelah file model ditemukan.</p>
+      </div>
+
+      <div class="card">
+        <h2>✨ Hasil Prediksi</h2>
+        <p class="subtext">Persentase menunjukkan tingkat keyakinan model terhadap setiap kelas gambar.</p>
+        <div id="label-container">
+          <div class="empty-results">Hasil prediksi akan muncul di sini setelah kamera dimulai.</div>
+        </div>
+        <div class="tip"><strong>Tips:</strong> Arahkan kamera ke objek dengan pencahayaan yang cukup agar hasil prediksi lebih baik.</div>
+      </div>
+    </section>
+  </main>
+
+  <footer>Dibuat menggunakan Teachable Machine Image Model dan TensorFlow.js.</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+  <script type="text/javascript">
+    // Pastikan folder my_model berisi model.json dan metadata.json.
+    const URL = "./my_model/";
+
+    let model, webcam, labelContainer, maxPredictions;
+    let isRunning = false;
+    let animationId = null;
+
+    async function init() {
+      const startButton = document.getElementById("start-button");
+      const stopButton = document.getElementById("stop-button");
+      const message = document.getElementById("message");
+      startButton.disabled = true;
+      message.textContent = "Memuat model AI...";
+
+      try {
+        const modelURL = URL + "model.json";
+        const metadataURL = URL + "metadata.json";
+
+        model = await tmImage.load(modelURL, metadataURL);
+        maxPredictions = model.getTotalClasses();
+
+        const flip = true;
+        webcam = new tmImage.Webcam(280, 280, flip);
+        await webcam.setup();
+        await webcam.play();
+
+        document.getElementById("webcam-container").innerHTML = "";
+        document.getElementById("webcam-container").appendChild(webcam.canvas);
+
+        labelContainer = document.getElementById("label-container");
+        labelContainer.innerHTML = "";
+        for (let i = 0; i < maxPredictions; i++) {
+          const row = document.createElement("div");
+          row.className = "prediction-row";
+          row.innerHTML = `
+            <div class="prediction-heading">
+              <span class="class-name">Kelas ${i + 1}</span>
+              <span class="confidence">0%</span>
+            </div>
+            <div class="track"><div class="bar"></div></div>
+          `;
+          labelContainer.appendChild(row);
+        }
+
+        isRunning = true;
+        stopButton.disabled = false;
+        startButton.textContent = "Kamera Aktif";
+        message.textContent = "Kamera aktif. Arahkan ke objek yang ingin dikenali.";
+        window.requestAnimationFrame(loop);
+      } catch (error) {
+        console.error(error);
+        message.textContent = "Gagal memulai model/kamera. Periksa folder my_model, koneksi internet, dan izin kamera.";
+        startButton.disabled = false;
+        startButton.textContent = "Coba Lagi";
+        if (webcam) {
+          try { webcam.stop(); } catch (_) {}
+          webcam = null;
+        }
+      }
+    }
+
+    async function loop() {
+      if (!isRunning || !webcam) return;
+      webcam.update();
+      await predict();
+      if (isRunning) animationId = window.requestAnimationFrame(loop);
+    }
+
+    async function predict() {
+      if (!model || !webcam || !labelContainer) return;
+      try {
+        const prediction = await model.predict(webcam.canvas);
+        for (let i = 0; i < maxPredictions; i++) {
+          const row = labelContainer.children[i];
+          const probability = prediction[i].probability;
+          row.querySelector(".class-name").textContent = prediction[i].className;
+          row.querySelector(".confidence").textContent = (probability * 100).toFixed(1) + "%";
+          row.querySelector(".bar").style.width = (probability * 100) + "%";
+        }
+      } catch (error) {
+        console.error("Prediksi gagal:", error);
+      }
+    }
+
+    function stopCamera() {
+      isRunning = false;
+      if (animationId !== null) cancelAnimationFrame(animationId);
+      if (webcam) {
+        try { webcam.stop(); } catch (_) {}
+        webcam = null;
+      }
+      document.getElementById("webcam-container").innerHTML = `
+        <div class="camera-placeholder">
+          <span class="camera-icon">📸</span>
+          Kamera telah dimatikan.<br>Tekan tombol Mulai Kamera untuk memulai lagi.
+        </div>`;
+      document.getElementById("label-container").innerHTML =
+        '<div class="empty-results">Mulai kamera untuk melihat hasil prediksi.</div>';
+      document.getElementById("message").textContent = "Kamera dimatikan.";
+      document.getElementById("start-button").disabled = false;
+      document.getElementById("start-button").textContent = "Mulai Kamera";
+      document.getElementById("stop-button").disabled = true;
+    }
+  </script>
+</body>
+</html>
